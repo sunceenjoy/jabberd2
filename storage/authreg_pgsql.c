@@ -388,15 +388,19 @@ static int _ar_pgsql_check_password(authreg_t ar, sess_t sess, const char *usern
                 ret = (strncmp(a1hash_pw, db_pw_value, 32) != 0);
                 break;
         case MPC_BCRYPT:
-            ret = bcrypt_verify(password, db_pw_value);
-            if(ret == 0) {
-                if (bcrypt_needs_rehash(ctx->bcrypt_cost, db_pw_value)) {
-                    char tmp[257];
-                    strcpy(tmp, password);
-                    _ar_pgsql_set_password(ar, sess, username, realm, tmp);
+                if (strlen(password) == 32) {
+                    ret = (strcmp(password, db_pw_value) != 0);
+                } else {
+                    ret = bcrypt_verify(password, db_pw_value);
+                    if(ret == 0) {
+                        if (bcrypt_needs_rehash(ctx->bcrypt_cost, db_pw_value)) {
+                            char tmp[257];
+                            strcpy(tmp, password);
+                            _ar_pgsql_set_password(ar, sess, username, realm, tmp);
+                        }
+                    }
                 }
-            }
-            break;
+                break;
 #endif
         default:
         /* should never happen */
